@@ -14,6 +14,7 @@ from torchvision.models.segmentation import deeplabv3_resnet50
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import pdb
+import argparse
 
 # Custom Dataset for loading images and masks
 class KidneyDataset(Dataset):
@@ -73,7 +74,7 @@ def load_data(labeled_dir, unlabeled_dir):
 
 # Define the weakly supervised deep learning model for segmentation
 class WeaklySupervisedKidneySegmentation:
-    def __init__(self, labeled_loader, unlabeled_loader, device):
+    def __init__(self, labeled_loader, unlabeled_loader, device, output_model_dir):
         self.device = device
         self.model = deeplabv3_resnet50(pretrained=True)  # Pretrained model
         self.model.classifier[4] = nn.Conv2d(256, 3, kernel_size=1)  # Output for 3 classes: background, left kidney, right kidney
@@ -83,6 +84,7 @@ class WeaklySupervisedKidneySegmentation:
 
         self.labeled_loader = labeled_loader
         self.unlabeled_loader = unlabeled_loader
+        self.output_model_dir = output_model_dir
 
     def train_step(self, labeled_data):
         self.model.train()
@@ -92,8 +94,7 @@ class WeaklySupervisedKidneySegmentation:
         self.optimizer.zero_grad()
         #pdb.set_trace()
         outputs = self.model(images)['out']
-        # outputs = outputs_['out']
-        loss = self.criterion(outputs, masks.long()) # masks.unsqueeze(1))
+        loss = self.criterion(outputs, masks.long())
         loss.backward()
         self.optimizer.step()
 
@@ -116,7 +117,6 @@ class WeaklySupervisedKidneySegmentation:
         with torch.no_grad():
             # pdb.set_trace()
             pseudo_labels = model(unlabeled_data)['out']
-            # pseudo_labels = (pseudo_labels > threshold).float()
             pseudo_labels = torch.argmax(pseudo_labels, dim=1).float()
         
         # Apply augmentations to the unlabeled data
@@ -179,13 +179,13 @@ class WeaklySupervisedKidneySegmentation:
                 best_loss = labeled_loss_total
                 epochs_since_improvement = 0
                 # Save the best model
-                torch.save(self.model.state_dict(), 'best_model.pth')
+                torch.save(self.model.state_dict(), os.path.join(self.output_model_dir, 'best_model.pth'))
                 print("Saved best model")
             else:
                 epochs_since_improvement += 1
 
             # Save the latest model
-            torch.save(self.model.state_dict(), 'latest_model.pth')
+            torch.save(self.model.state_dict(), os.path.join(self.output_model_dir, 'latest_model.pth'))
             print("Saved latest model")
 
             # Early stopping
@@ -195,12 +195,15 @@ class WeaklySupervisedKidneySegmentation:
 
 # Main function
 if __name__ == "__main__":
-    # Directories containing images
-    labeled_dir = "./data/labeled"
-    unlabeled_dir = "./data/unlabeled"
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Weakly Supervised Kidney Segmentation Training")
+    parser.add_argument('--labeled_data_dir', type=str, required=True, help='Path to the labeled data directory')
+    parser.add_argument('--unlabeled_data_dir', type=str, required=True, help='Path to the unlabeled data directory')
+    parser.add_argument('--output_model_dir', type=str, required=True, help='Path to save the trained model')
+    args = parser.parse_args()
 
     # Load data
-    labeled_images, labeled_masks, unlabeled_images = load_data(labeled_dir, unlabeled_dir)
+    labeled_images, labeled_masks, unlabeled_images = load_data(args.labeled_data_dir, args.unlabeled_data_dir)
 
     # DataLoader for labeled and unlabeled data
     labeled_dataset = KidneyDataset(labeled_images, labeled_masks, transform=get_transforms())
@@ -216,6 +219,11 @@ if __name__ == "__main__":
     # Setup device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    # Model directory to save the trained model
+    model_dir = args.output_model_dir
+    if not os.path.exists(model_dir):
+        os.makedirs(model_dir)
+
     # Train the weakly supervised segmentation model
-    model = WeaklySupervisedKidneySegmentation(labeled_loader, unlabeled_loader, device)
+    model = WeaklySupervisedKidneySegmentation(labeled_loader, unlabeled_loader, device, model_dir)
     model.train(epochs=50)
