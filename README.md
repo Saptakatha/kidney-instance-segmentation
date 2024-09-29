@@ -5,7 +5,11 @@ This repository provides a comprehensive solution for kidney instance segmentati
 ### Installation <a name="install"></a>
 First, clone the repository and navigate to the project directory:
 ```python
-git clone https://github.com/yourusername/kidney-instance-segmentation.git
+git clone https://github.com/Saptakatha/kidney-instance-segmentation.git
 cd kidney-instance-segmentation
 ```
 
+Install the required packages using ```requirements.txt```:
+```python
+pip install -r requirements.txt
+```
