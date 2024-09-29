@@ -273,8 +273,8 @@ def main(image_path, output_path):
 
 # Example usage
 if __name__ == "__main__":
-    image_dir_path = "./data/train/images"
-    output_dir_path = r".\output"
+    image_dir_path = "./data/labeled/images"
+    output_dir_path = "./data/labeled/masks"
     image_file = "1-3-46-670589-33-1-63700700749865510700001-5062181202000819812_png_jpg.rf.74493ef7bdab6de49e88f708a5745000.jpg"
     output_file = image_file.replace(".jpg", "_mask.png")
     image_file_path = os.path.join(image_dir_path, image_file)
