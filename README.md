@@ -15,16 +15,18 @@ pip install -r requirements.txt
 ```
 
 ### Generating Initial Kidney Instance Segmentation Masks <a name="generate_masks"></a>
-To generate initial kidney instance segmentation masks, use the ```kidney_annotation.ipynb``` Jupyter Notebook. This notebook guides you through the process of loading images, setting seed points, and applying the region growing algorithm to create initial segmentation masks.
+To generate initial kidney instance segmentation masks, use the `kidney_annotation.py` script. This script guides you through the process of loading images, setting seed points, and applying the region growing algorithm by setting threshold to create initial segmentation masks.
 
-1. Open the Jupyter notebook:
-```python 
-jupyter notebook region_growing.ipynb
+1. Run the script:
+```bash
+python kidney_annotation.py
 ```
 2. Follow the instructions in the notebook to:
     + Load the kidney images.
-    + Set seed points for the region growing algorithm.
+    + Set seed points for the left and right kidneys separately.
+    + Provide thresholds for the region growing algorithm for each kidney.
     + Generate and visualize the initial segmentation masks.
+    + Save the segmentation masks if the results are satisfactory, or adjust the thresholds and regenerate the masks.
 
 ### Training the Model in a Weakly Supervised Manner <a name="train_model"></a>
 Using the labeled image-mask pairs and unlabeled images, you can train a model in a weakly supervised manner with the ```weakly_supervised_train.py``` script.
