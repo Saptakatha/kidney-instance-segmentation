@@ -19,7 +19,7 @@ def get_inference_transforms():
 # Load the trained model
 def load_model(model_path, device):
     model = deeplabv3_resnet50(pretrained=False)
-    model.classifier[4] = torch.nn.Conv2d(256, 1, kernel_size=1)
+    model.classifier[4] = torch.nn.Conv2d(256, 3, kernel_size=1) # Output for 3 classes: background, left kidney, right kidney
 
     # Load the state dictionary
     state_dict = torch.load(model_path, map_location=device)
@@ -45,9 +45,10 @@ def infer(model, image_tensor, device):
     with torch.no_grad():
         image_tensor = image_tensor.to(device)
         output = model(image_tensor)['out']
-        output = torch.sigmoid(output)
-        output = output.squeeze().cpu().numpy()
-        output = (output > 0.5).astype(np.uint8)  # Thresholding to get binary mask
+        # output = torch.sigmoid(output)
+        # output = output.squeeze().cpu().numpy()
+        # output = (output > 0.5).astype(np.uint8)  # Thresholding to get binary mask
+        output = torch.argmax(output, dim=1).squeeze().cpu().numpy()  # Get the class with the highest score
     return output
 
 # Main function for inference
@@ -64,7 +65,9 @@ def main_inference(image_paths, model_path, output_dir, device):
         
         # Save the output mask
         mask_path = os.path.join(output_dir, os.path.basename(image_path))
-        cv2.imwrite(mask_path, mask * 255)  # Save mask as binary image
+        mask = np.where(mask == 1, 255, mask).astype(np.uint8)  # Left kidney
+        mask = np.where(mask == 2, 127, mask).astype(np.uint8)  # Right kidney
+        cv2.imwrite(mask_path, mask)  # Save mask as image
 
 if __name__ == "__main__":
     # Paths to the unseen images

@@ -31,7 +31,9 @@ class KidneyDataset(Dataset):
         if self.mask_paths:
             mask = cv2.imread(self.mask_paths[idx], 0)  # Load mask as grayscale
             mask = cv2.resize(mask, (image.shape[1], image.shape[0]))
-            mask = np.where(mask > 0, 1, 0).astype(np.float32)  # Binary mask (kidney vs background)
+            mask = np.where(mask == 255, 1, mask).astype(np.float32)  # left kidney
+            mask = np.where(mask == 127, 2, mask).astype(np.float32)  # right kidney
+            mask = np.clip(mask, 0, 2)  # Ensure values are within the range [0, 2]
         else:
             mask = np.zeros((image.shape[0], image.shape[1]), dtype=np.float32)  # Placeholder for unlabeled data
 
@@ -74,10 +76,10 @@ class WeaklySupervisedKidneySegmentation:
     def __init__(self, labeled_loader, unlabeled_loader, device):
         self.device = device
         self.model = deeplabv3_resnet50(pretrained=True)  # Pretrained model
-        self.model.classifier[4] = nn.Conv2d(256, 1, kernel_size=1)  # Binary segmentation output
+        self.model.classifier[4] = nn.Conv2d(256, 3, kernel_size=1)  # Output for 3 classes: background, left kidney, right kidney
         self.model = self.model.to(device)
         self.optimizer = optim.Adam(self.model.parameters(), lr=1e-4)
-        self.criterion = nn.BCEWithLogitsLoss()
+        self.criterion = nn.CrossEntropyLoss()
 
         self.labeled_loader = labeled_loader
         self.unlabeled_loader = unlabeled_loader
@@ -91,7 +93,7 @@ class WeaklySupervisedKidneySegmentation:
         #pdb.set_trace()
         outputs = self.model(images)['out']
         # outputs = outputs_['out']
-        loss = self.criterion(outputs, masks.unsqueeze(1))
+        loss = self.criterion(outputs, masks.long()) # masks.unsqueeze(1))
         loss.backward()
         self.optimizer.step()
 
@@ -114,13 +116,20 @@ class WeaklySupervisedKidneySegmentation:
         with torch.no_grad():
             # pdb.set_trace()
             pseudo_labels = model(unlabeled_data)['out']
-            pseudo_labels = (pseudo_labels > threshold).float()
+            # pseudo_labels = (pseudo_labels > threshold).float()
+            pseudo_labels = torch.argmax(pseudo_labels, dim=1).float()
         
         # Apply augmentations to the unlabeled data
         augmented_data = self.apply_augmentations(unlabeled_data)
         
         # Get model predictions for the augmented data
         augmented_predictions = model(augmented_data)['out']
+        augmented_predictions = torch.argmax(augmented_predictions, dim=1).float()
+
+        # Ensure the shapes match
+        if augmented_predictions.shape != pseudo_labels.shape:
+            raise ValueError(f"Shape mismatch: augmented_predictions shape {augmented_predictions.shape} does not match pseudo_labels shape {pseudo_labels.shape}")
+    
         
         # Calculate the consistency loss
         consistency_loss = F.mse_loss(augmented_predictions, pseudo_labels)
