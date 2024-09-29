@@ -21,7 +21,7 @@ To generate initial kidney instance segmentation masks, use the `kidney_annotati
 ```bash
 python kidney_annotation.py
 ```
-2. Follow the instructions in the notebook to:
+2. Follow the instructions in the script to:
     + Load the kidney images.
     + Set seed points for the left and right kidneys separately.
     + Provide thresholds for the region growing algorithm for each kidney.
