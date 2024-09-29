@@ -7,6 +7,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 from glob import glob
 from tqdm import tqdm
+import argparse
 
 # Define transformations for inference
 def get_inference_transforms():
@@ -70,16 +71,22 @@ def main_inference(image_paths, model_path, output_dir, device):
         cv2.imwrite(mask_path, mask)  # Save mask as image
 
 if __name__ == "__main__":
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Inference for kidney segmentation")
+    parser.add_argument('--model_dir', type=str, required=True, help='Path to the saved model')
+    parser.add_argument('--test_data_dir', type=str, required=True, help='Path to the test data directory')
+    parser.add_argument('--output_dir', type=str, required=True, help='Path to save the predictions')
+    args = parser.parse_args()
+
     # Paths to the unseen images
-    unseen_image_dir = "./data/test/images"
-    unseen_image_paths = sorted(glob(os.path.join(unseen_image_dir, "*.jpg")))
+    unseen_image_paths = sorted(glob(os.path.join(args.test_data_dir, "*.jpg")))
     print(f"Number of unseen images: {len(unseen_image_paths)}")
 
     # Path to the trained model
-    model_path = "best_model.pth"
+    model_path = args.model_dir
 
     # Output directory to save the masks
-    output_dir = "./data/test/output_masks"
+    output_dir = args.output_dir
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
