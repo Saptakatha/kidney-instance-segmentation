@@ -35,9 +35,9 @@ Using the labeled image-mask pairs and unlabeled images, you can train a model i
 python weakly_supervised_train.py --labeled_data_dir path/to/labeled_data --unlabeled_data_dir path/to/unlabeled_data --output_model_dir path/to/save_model
 ```
 This script will:
-    + Load the labeled and unlabeled data.
-    + Generate pseudo-labels for the unlabeled data.
-    + Train the model using a combination of supervised and unsupervised loss functions.
++ Load the labeled and unlabeled data.
++ Generate pseudo-labels for the unlabeled data.
++ Train the model using a combination of supervised and unsupervised loss functions.
 
 ### Inferring on Test Images <a name="infer_model"></a>
 Once the model is trained, you can use it to infer on test images with the ```weakly_supervised_infer```.py script.
@@ -48,9 +48,9 @@ Once the model is trained, you can use it to infer on test images with the ```we
 python weakly_supervised_infer.py --model_dir path/to/saved_model --test_data_dir path/to/test_data --output_dir path/to/save_predictions
 ```
 The script will:
-    + Load the trained model.
-    + Perform inference on the test images.
-    + Save the predicted segmentation masks to the specified output directory.
++ Load the trained model.
++ Perform inference on the test images.
++ Save the predicted segmentation masks to the specified output directory.
 
 ###  Conclusion <a name="conclusion"></a>
 This repository provides a robust framework for kidney instance segmentation using weakly supervised learning. By following the steps outlined above, you can generate initial segmentation masks, train a model with both labeled and unlabeled data, and perform inference on new test images. For any questions or issues, please open an issue in the repository.
