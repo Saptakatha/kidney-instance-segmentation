@@ -1,8 +1,0 @@
-1. instance seg kidney
-2. u-net model
-3. improve loss and other modules
-4. improve gui
-    a. left and right kidney seg
-    b. adaptive threshold
-    c. undo functionality
-5. train model
